@@ -11,12 +11,11 @@ import { logger } from '../../shared/utils/logger.js';
 import type { ClaimStatus, UserRole } from '../../shared/types/index.js';
 
 // Generate deterministic UUIDs for testing
-function generateId(base: string, index: number): string {
-  // Create a consistent ID for testing
-  return `${base.padStart(32, '0').slice(0, 32)}${index.toString().padStart(4, '0').slice(-4)}`.replace(
-    /(.{8})(.{4})(.{4})(.{4})(.{12})/,
-    '$1-$2-$3-$4-$5'
-  );
+function generateId(prefix: string, index: number): string {
+  // Create a valid UUID v4 format with deterministic values for testing
+  // Format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx (where y is 8, 9, a, or b)
+  const hex = (prefix + index.toString()).split('').map(c => c.charCodeAt(0).toString(16)).join('').padEnd(32, '0').slice(0, 32);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 
 // Test data IDs
