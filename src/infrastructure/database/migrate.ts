@@ -1,4 +1,4 @@
-import { migrate } from 'drizzle-orm/neon-http/migrator';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { db } from './connection.js';
 import { logger } from '../../shared/utils/logger.js';
 

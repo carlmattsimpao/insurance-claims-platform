@@ -1,33 +1,27 @@
-import { drizzle } from 'drizzle-orm/neon-http';
-import { neon, neonConfig } from '@neondatabase/serverless';
 import { env } from '../../config/env.js';
 import * as schema from './schema/index.js';
-
-// Configure Neon for serverless
-neonConfig.fetchConnectionCache = true;
-
-// Create the SQL client
-const sql = neon(env.DATABASE_URL);
-
-// Create the Drizzle instance with schema
-export const db = drizzle(sql as Parameters<typeof drizzle>[0], { schema });
-
-// Export types
-export type Database = typeof db;
-
-// For transactions (using postgres.js for full transaction support)
 import postgres from 'postgres';
+import { drizzle as drizzlePostgres } from 'drizzle-orm/postgres-js';
 
-// Create a postgres.js client for transactions
+// Detect if using Neon (cloud) or local PostgreSQL
+const isNeon = env.DATABASE_URL.includes('neon.tech');
+
+// Create postgres.js client (works with both Neon and local PostgreSQL)
 const pgClient = postgres(env.DATABASE_URL, {
   max: 10,
   idle_timeout: 20,
   connect_timeout: 10,
+  ssl: isNeon ? 'require' : false,  // SSL required for Neon, not for local
 });
 
-import { drizzle as drizzlePostgres } from 'drizzle-orm/postgres-js';
+// Create the Drizzle instance with schema
+export const db = drizzlePostgres(pgClient, { schema });
 
-export const dbWithTransactions = drizzlePostgres(pgClient, { schema });
+// Export for transactions (same client)
+export const dbWithTransactions = db;
+
+// Export types
+export type Database = typeof db;
 
 // Transaction helper
 export async function runInTransaction<T>(
@@ -41,7 +35,7 @@ export async function runInTransaction<T>(
 // Health check
 export async function checkDatabaseConnection(): Promise<boolean> {
   try {
-    await sql`SELECT 1`;
+    await pgClient`SELECT 1`;
     return true;
   } catch (error) {
     console.error('Database connection failed:', error);

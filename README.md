@@ -952,3 +952,65 @@ MIT
 ## Author
 
 Carl Matt - Backend Developer
+
+---
+
+## Bonus Features Implemented
+
+### ✅ API Documentation (Swagger/OpenAPI)
+
+Interactive API documentation available at:
+- **Swagger UI**: http://localhost:3000/api-docs
+- **OpenAPI JSON**: http://localhost:3000/api-docs.json
+
+Features:
+- Full schema documentation for all endpoints
+- Try-it-out functionality to test API calls
+- Authentication support (paste your JWT token)
+
+### ✅ Request Rate Limiting Per Tenant
+
+Implemented in `src/presentation/middleware/rate-limit.middleware.ts`:
+
+| Endpoint Type | Limit | Window |
+|---------------|-------|--------|
+| Standard API | 100 requests | 1 minute |
+| Auth (login/register) | 10 requests | 15 minutes |
+| Bulk operations | 10 requests | 1 minute |
+
+Rate limit headers included in responses:
+- `X-RateLimit-Limit`: Maximum requests allowed
+- `X-RateLimit-Remaining`: Requests remaining
+- `X-RateLimit-Reset`: Unix timestamp when limit resets
+
+### ✅ Audit Logging
+
+**Built-in audit trail:**
+- `statusHistory` JSONB field in claims tracks all status changes
+- Each change records: previous status, new status, timestamp, user ID, reason
+
+**Audit logs table** (`audit_logs`) ready for comprehensive logging:
+- Entity type and ID tracking
+- Before/after snapshots
+- User and organization attribution
+
+### ✅ Docker Setup for Local Development
+
+```bash
+# Start PostgreSQL and Redis locally
+docker-compose up -d
+
+# Update .env for local development
+DATABASE_URL=postgresql://dev:dev123@localhost:5432/claims
+REDIS_URL=redis://localhost:6379
+
+# Run the app
+npm run db:push
+npm run db:seed
+npm run dev
+```
+
+Includes:
+- PostgreSQL 16
+- Redis 7
+- Redis Commander UI (http://localhost:8081)

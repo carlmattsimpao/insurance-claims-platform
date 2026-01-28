@@ -1,10 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
 import 'express-async-errors';
 import routes from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middleware/index.js';
 import { logger } from '../shared/utils/logger.js';
+import { swaggerSpec } from '../infrastructure/swagger/swagger.js';
 
 // Create Express app
 export function createApp(): express.Application {
@@ -51,6 +53,18 @@ export function createApp(): express.Application {
     });
 
     next();
+  });
+
+  // API Documentation (Swagger UI)
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Insurance Claims API Documentation',
+  }));
+  
+  // Serve OpenAPI spec as JSON
+  app.get('/api-docs.json', (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
   });
 
   // Mount routes

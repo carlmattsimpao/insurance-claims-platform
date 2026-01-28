@@ -1,0 +1,80 @@
+# Docker Compose for local development
+# Usage: docker-compose up -d
+# This provides local PostgreSQL and Redis for development without cloud services
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: claims-postgres
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dev123
+      POSTGRES_DB: claims
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev -d claims"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for BullMQ
+  redis:
+    image: redis:7-alpine
+    container_name: claims-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Commander - Web UI for Redis (optional, for debugging)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: claims-redis-ui
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+
+volumes:
+  postgres_data:
+  redis_data:
+
+# ============================================
+# LOCAL DEVELOPMENT SETUP
+# ============================================
+# 
+# 1. Start containers:
+#    docker-compose up -d
+#
+# 2. Update your .env file:
+#    DATABASE_URL=postgresql://dev:dev123@localhost:5432/claims
+#    REDIS_URL=redis://localhost:6379
+#
+# 3. Run migrations:
+#    npm run db:push
+#
+# 4. Seed data:
+#    npm run db:seed
+#
+# 5. Start the app:
+#    npm run dev
+#
+# 6. Access Redis UI (optional):
+#    http://localhost:8081
+#
+# To stop:
+#    docker-compose down
+#
+# To stop and remove data:
+#    docker-compose down -v
