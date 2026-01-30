@@ -39,6 +39,8 @@ describe('Async Job Processing - Idempotency Tests', () => {
     idempotencyKey: 'admission-patient-1-12345',
     triggeredBy: 'system',
     jobId: 'job-1',
+    type: 'patient_admission',
+    triggeredAt: new Date().toISOString(),
   };
 
   const mockClaims = [
@@ -181,6 +183,8 @@ describe('Async Job Processing - Idempotency Tests', () => {
       idempotencyKey: 'discharge-patient-1-12345',
       triggeredBy: 'system',
       jobId: 'job-2',
+      type: 'patient_discharge',
+      triggeredAt: new Date().toISOString(),
     };
 
     it('should auto-approve claims on discharge', async () => {
@@ -230,6 +234,8 @@ describe('Async Job Processing - Idempotency Tests', () => {
       idempotencyKey: 'treatment-patient-1-12345',
       triggeredBy: 'system',
       jobId: 'job-3',
+      type: 'treatment_initiated',
+      triggeredAt: new Date().toISOString(),
       treatmentType: 'Surgery',
     };
 
@@ -281,6 +287,8 @@ describe('Async Job Processing - Concurrent Execution', () => {
       idempotencyKey: 'concurrent-test-key',
       triggeredBy: 'system',
       jobId: 'job-concurrent',
+      type: 'patient_admission',
+      triggeredAt: new Date().toISOString(),
     };
 
     // Simulate race condition: first call creates log, second sees it in progress
@@ -347,6 +355,8 @@ describe('Async Job Processing - Partial Failure Recovery', () => {
       idempotencyKey: 'partial-failure-key',
       triggeredBy: 'system',
       jobId: 'job-partial',
+      type: 'patient_admission',
+      triggeredAt: new Date().toISOString(),
     };
 
     const claims = [
