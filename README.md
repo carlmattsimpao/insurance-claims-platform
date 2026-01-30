@@ -189,21 +189,89 @@ The repository-level filtering is the **critical security layer** because it's i
 
 ### Models and relationships (Drizzle schema)
 
-```
-┌─────────────────┐
-│  organizations  │
-└────────┬────────┘
-         │ 1:N
-    ┌────┴────┬─────────┬──────────┬─────────────────┐
-    ▼         ▼         ▼          ▼                 ▼
-┌───────┐ ┌───────┐ ┌──────────┐ ┌────────┐ ┌──────────────────┐
-│ users │ │patients│ │providers │ │ claims│ │patient_status_   │
-│       │ │       │ │          │ │        │ │    events        │
-└───────┘ └───┬───┘ └────┬─────┘ └────────┘ └──────────────────┘
-              │          │            ▲
-              └──────────┴────────────┘
-                    N:1 relationships
-```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              DATABASE SCHEMA                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────┐
+│  ORGANIZATIONS   │  ◄─── The TENANTS (insurance companies)
+├──────────────────┤
+│ id               │
+│ name             │
+│ settings (JSON)  │
+│ createdAt        │
+└────────┬─────────┘
+         │
+         │ Every other table has organizationId (for tenant isolation)
+         │
+         ▼
+┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
+│     USERS        │      │    PATIENTS      │      │    PROVIDERS     │
+├──────────────────┤      ├──────────────────┤      ├──────────────────┤
+│ id               │      │ id               │      │ id               │
+│ organizationId ──┼──────│ organizationId ──┼──────│ organizationId   │
+│ email            │      │ firstName        │      │ name             │
+│ passwordHash     │      │ lastName         │      │ npi (license #)  │
+│ role ────────────┼─┐    │ dateOfBirth      │      │ specialty        │
+│ assignedClaimIds │ │    │ memberId         │      │ taxId            │
+└──────────────────┘ │    └────────┬─────────┘      └────────┬─────────┘
+                     │             │                          │
+  Roles:             │             │                          │
+  - admin            │             │                          │
+  - claims_processor │             │                          │
+  - provider         │             ▼                          ▼
+  - patient          │    ┌────────────────────────────────────────────┐
+                     │    │                 CLAIMS                      │
+                     │    ├────────────────────────────────────────────┤
+                     │    │ id                                         │
+                     │    │ organizationId ◄─── Tenant isolation       │
+                     │    │ claimNumber (unique per org)               │
+                     │    │ patientId ◄──────── Who's the patient?     │
+                     │    │ providerId ◄─────── Who's the doctor?      │
+                     │    │ assignedTo ◄─────── Which processor?       │
+                     │    │ status ◄─────────── submitted/under_review/│
+                     │    │                     approved/rejected/paid  │
+                     │    │ diagnosisCode        (ICD-10 code)         │
+                     │    │ procedureCode        (CPT code)            │
+                     │    │ amount               (money)               │
+                     │    │ serviceDate          (when treated)        │
+                     │    │ statusHistory (JSON) ◄── Audit trail       │
+                     │    │ submittedAt                                │
+                     │    │ processedAt                                │
+                     │    │ paidAt                                     │
+                     │    └────────────────────────────────────────────┘
+                     │
+                     │
+                     ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│                    PATIENT_STATUS_EVENTS                             │
+├──────────────────────────────────────────────────────────────────────┤
+│ id                                                                   │
+│ organizationId                                                       │
+│ patientId ◄──────────── Which patient?                               │
+│ statusType ◄─────────── admission / discharge / treatment            │
+│ occurredAt                                                           │
+│ details (JSON) ◄─────── Facility name, diagnosis, etc.               │
+│ idempotencyKey ◄─────── Prevents duplicate processing                │
+│ jobId ◄──────────────── Links to BullMQ job                          │
+│ jobStatus ◄──────────── pending / processing / completed / failed    │
+└──────────────────────────────────────────────────────────────────────┘
+         │
+         │ Triggers background job
+         ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│                    JOB_PROCESSING_LOGS                               │
+├──────────────────────────────────────────────────────────────────────┤
+│ id                                                                   │
+│ idempotencyKey ◄─────── Ensures job runs only once                   │
+│ jobType ◄────────────── patient_admission / discharge / treatment    │
+│ status ◄─────────────── pending / processing / completed / failed    │
+│ result (JSON) ◄──────── What claims were updated                     │
+│ error (JSON) ◄───────── If failed, why?                              │
+│ attempts                                                             │
+│ createdAt                                                            │
+│ completedAt                                                          │
+└──────────────────────────────────────────────────────────────────────┘
 
 **Core Tables:**
 
