@@ -51,8 +51,8 @@ describe('Security: Tenant Isolation', () => {
 
   describe('Cross-Tenant Access Prevention', () => {
     it('should reject access when user tries to access different organization', () => {
-      const userOrg = 'org-1';
-      const requestedOrg = 'org-2';
+      const userOrg: string = 'org-1';
+      const requestedOrg: string = 'org-2';
       
       // User from org-1 should not be able to access org-2 data
       expect(userOrg).not.toBe(requestedOrg);
@@ -79,8 +79,8 @@ describe('Security: Tenant Isolation', () => {
     });
 
     it('should prevent URL parameter manipulation for tenant access', () => {
-      const authenticatedUserOrg = 'org-1';
-      const urlParamOrgId = 'org-2'; // Attacker trying to access different org
+      const authenticatedUserOrg: string = 'org-1';
+      const urlParamOrgId: string = 'org-2'; // Attacker trying to access different org
       
       // System should validate that URL org matches authenticated user's org
       const isValidAccess = authenticatedUserOrg === urlParamOrgId;
