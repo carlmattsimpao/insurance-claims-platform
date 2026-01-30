@@ -59,7 +59,7 @@ npm run worker:dev
 |-------|----------|------|--------------|
 | admin@healthfirst.com | Password123! | Admin | HealthFirst Insurance |
 | processor1@healthfirst.com | Password123! | Claims Processor | HealthFirst Insurance |
-| provider1@healthfirst.com | Password123! | Provider | HealthFirst Insurance |
+| doctor@citygeneral.com | Password123! | Provider | HealthFirst Insurance |
 | admin@securecare.com | Password123! | Admin | SecureCare Insurance |
 
 ---
